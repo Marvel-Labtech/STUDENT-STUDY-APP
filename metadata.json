@@ -1,0 +1,8 @@
+{
+  "name": "AstroStudy - Interactive AI Student Companion",
+  "description": "Production-ready student study app with Google Sheets syllabus sync, AI study buddy, 3D interactive flashcards, smart Pomodoro timer, dynamic quizzes, and gamified XP streak engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
