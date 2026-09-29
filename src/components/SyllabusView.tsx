@@ -14,13 +14,15 @@ import {
   ChevronUp,
   BookOpen
 } from 'lucide-react';
-import { SyllabusConfig, SyllabusItem, SyllabusStatus } from '../types';
+import { SyllabusConfig, SyllabusItem, SyllabusStatus, DailyTrendPoint } from '../types';
 import { fetchGoogleSheetSyllabus, PRESET_SYLLABI } from '../utils/syllabusParser';
 import { ASSETS } from '../utils/assets';
+import { TrendsAnalyticsChart } from './TrendsAnalyticsChart';
 
 interface SyllabusViewProps {
   items: SyllabusItem[];
   config: SyllabusConfig;
+  dailyTrends: DailyTrendPoint[];
   onUpdateItems: (items: SyllabusItem[]) => void;
   onUpdateConfig: (config: SyllabusConfig) => void;
   onSelectTopicForStudy: (topic: string) => void;
@@ -32,6 +34,7 @@ interface SyllabusViewProps {
 export const SyllabusView: React.FC<SyllabusViewProps> = ({
   items,
   config,
+  dailyTrends,
   onUpdateItems,
   onUpdateConfig,
   onSelectTopicForStudy,
@@ -246,6 +249,9 @@ export const SyllabusView: React.FC<SyllabusViewProps> = ({
           </div>
         </div>
       </section>
+
+      {/* 30-Day Cognitive Velocity & XP Trendline Line Graph */}
+      <TrendsAnalyticsChart data={dailyTrends} />
 
       {/* Study Planner Table */}
       <section className="bg-[#0D1527] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">

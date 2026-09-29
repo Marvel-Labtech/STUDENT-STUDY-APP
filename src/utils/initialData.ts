@@ -1,4 +1,4 @@
-import { Achievement, Flashcard, GamificationState, QuizQuestion } from '../types';
+import { Achievement, DailyTrendPoint, Flashcard, GamificationState, QuizQuestion } from '../types';
 
 export const INITIAL_ACHIEVEMENTS: Achievement[] = [
   {
@@ -228,6 +228,44 @@ export function calculateLevel(totalXP: number): { level: number; title: string;
   };
 }
 
+export function generateLast30DaysTrends(currentTodayMinutes = 25, currentTodayXP = 35): DailyTrendPoint[] {
+  const points: DailyTrendPoint[] = [];
+  const today = new Date();
+
+  // Curated pattern of active study cycles across the last 30 days
+  const samplePattern = [
+    { mins: 30, xp: 45 }, { mins: 50, xp: 70 }, { mins: 45, xp: 60 }, { mins: 0, xp: 0 },
+    { mins: 25, xp: 35 }, { mins: 60, xp: 85 }, { mins: 40, xp: 55 }, { mins: 0, xp: 0 },
+    { mins: 55, xp: 80 }, { mins: 75, xp: 105 }, { mins: 35, xp: 50 }, { mins: 50, xp: 75 },
+    { mins: 0, xp: 0 }, { mins: 45, xp: 65 }, { mins: 65, xp: 90 }, { mins: 50, xp: 70 },
+    { mins: 30, xp: 40 }, { mins: 0, xp: 0 }, { mins: 55, xp: 80 }, { mins: 70, xp: 95 },
+    { mins: 40, xp: 60 }, { mins: 60, xp: 85 }, { mins: 0, xp: 0 }, { mins: 45, xp: 65 },
+    { mins: 80, xp: 115 }, { mins: 50, xp: 75 }, { mins: 35, xp: 50 }, { mins: 60, xp: 90 },
+    { mins: 45, xp: 65 }, { mins: currentTodayMinutes, xp: currentTodayXP }
+  ];
+
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const rawDate = d.toISOString().split('T')[0];
+    const month = d.toLocaleDateString('en-US', { month: 'short' });
+    const day = d.getDate();
+    const dateLabel = `${month} ${day}`;
+
+    const patternIdx = 29 - i;
+    const item = samplePattern[patternIdx] || { mins: 25, xp: 35 };
+
+    points.push({
+      date: dateLabel,
+      rawDate,
+      focusMinutes: i === 0 ? currentTodayMinutes : item.mins,
+      xpGained: i === 0 ? currentTodayXP : item.xp,
+    });
+  }
+
+  return points;
+}
+
 export const INITIAL_GAMIFICATION_STATE: GamificationState = {
   currentStreak: 1,
   bestStreak: 1,
@@ -242,4 +280,5 @@ export const INITIAL_GAMIFICATION_STATE: GamificationState = {
   totalCardsMastered: 0,
   totalQuizzesPassed: 0,
   todayFocusMinutes: 25,
+  dailyTrends: generateLast30DaysTrends(25, 35),
 };

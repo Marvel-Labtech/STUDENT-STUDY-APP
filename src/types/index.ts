@@ -83,6 +83,13 @@ export interface Achievement {
   maxProgress: number;
 }
 
+export interface DailyTrendPoint {
+  date: string; // e.g. "Sep 15"
+  rawDate: string; // e.g. "2026-09-15"
+  focusMinutes: number;
+  xpGained: number;
+}
+
 export interface GamificationState {
   currentStreak: number;
   bestStreak: number;
@@ -97,6 +104,7 @@ export interface GamificationState {
   totalCardsMastered: number;
   totalQuizzesPassed: number;
   todayFocusMinutes: number;
+  dailyTrends?: DailyTrendPoint[];
 }
 
 export interface ChatMessage {

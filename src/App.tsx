@@ -20,7 +20,8 @@ import {
   INITIAL_FLASHCARDS, 
   INITIAL_GAMIFICATION_STATE, 
   INITIAL_QUIZ_QUESTIONS, 
-  calculateLevel 
+  calculateLevel,
+  generateLast30DaysTrends 
 } from './utils/initialData';
 import { PRESET_SYLLABI } from './utils/syllabusParser';
 
@@ -42,7 +43,13 @@ export default function App() {
   const [gamification, setGamification] = useState<GamificationState>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.GAMIFICATION);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.dailyTrends || parsed.dailyTrends.length === 0) {
+          parsed.dailyTrends = generateLast30DaysTrends(parsed.todayFocusMinutes || 25, 35);
+        }
+        return parsed;
+      }
     } catch {}
     return INITIAL_GAMIFICATION_STATE;
   });
@@ -201,6 +208,33 @@ export default function App() {
         };
       });
 
+      // Update 30-day trends dynamically
+      let existingTrends = prev.dailyTrends && prev.dailyTrends.length > 0
+        ? [...prev.dailyTrends]
+        : generateLast30DaysTrends(newFocusMinutes, 35);
+
+      const todayIdx = existingTrends.findIndex((t) => t.rawDate === todayISO);
+      if (todayIdx >= 0) {
+        existingTrends[todayIdx] = {
+          ...existingTrends[todayIdx],
+          focusMinutes: newFocusMinutes,
+          xpGained: existingTrends[todayIdx].xpGained + xpGained,
+        };
+      } else {
+        const d = new Date();
+        const month = d.toLocaleDateString('en-US', { month: 'short' });
+        const day = d.getDate();
+        existingTrends.push({
+          date: `${month} ${day}`,
+          rawDate: todayISO,
+          focusMinutes: newFocusMinutes,
+          xpGained: xpGained,
+        });
+        if (existingTrends.length > 30) {
+          existingTrends = existingTrends.slice(-30);
+        }
+      }
+
       return {
         ...prev,
         currentStreak: newStreak,
@@ -216,6 +250,7 @@ export default function App() {
         totalCardsMastered: newCardsMastered,
         totalQuizzesPassed: newQuizzesPassed,
         todayFocusMinutes: newFocusMinutes,
+        dailyTrends: existingTrends,
       };
     });
   };
@@ -329,6 +364,7 @@ export default function App() {
           <SyllabusView
             items={syllabusItems}
             config={syllabusConfig}
+            dailyTrends={gamification.dailyTrends || []}
             onUpdateItems={setSyllabusItems}
             onUpdateConfig={setSyllabusConfig}
             onSelectTopicForStudy={handleSelectTopicForStudy}

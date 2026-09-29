@@ -1,7 +1,9 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
@@ -12,7 +14,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
+
+// Health check endpoint for Cloud Run
+app.get('/health', (_req, res) => {
+  res.status(200).send('OK');
+});
 
 // Server-side Google GenAI initialization per skill guidelines
 const apiKey = process.env.GEMINI_API_KEY;
@@ -307,22 +314,33 @@ Each flashcard must have:
 
 // Vite Middleware for Development / Static Serve for Production
 async function setupVite() {
-  if (process.env.NODE_ENV !== 'production') {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const distPath = path.join(__dirname, 'dist');
+  const indexPath = path.join(distPath, 'index.html');
+
+  if (isProduction && fs.existsSync(indexPath)) {
+    console.log(`Serving static production build from ${distPath}`);
+    app.use(express.static(distPath));
+    app.get('*', (_req, res) => {
+      res.sendFile(indexPath, (err) => {
+        if (err && !res.headersSent) {
+          console.error('Error serving index.html:', err);
+          res.status(500).send('Internal Server Error');
+        }
+      });
+    });
+  } else {
+    console.log(`Mounting Vite middleware (production=${isProduction}, distExists=${fs.existsSync(indexPath)})`);
     const { createServer } = await import('vite');
     const vite = await createServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
-    app.use(express.static(path.join(__dirname, 'dist')));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-    });
   }
 
-  app.listen(PORT, () => {
-    console.log(`AstroStudy server listening on port ${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`AstroStudy server listening on http://0.0.0.0:${PORT} (mode=${isProduction ? 'production' : 'development'})`);
   });
 }
 
